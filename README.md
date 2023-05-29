@@ -303,27 +303,38 @@ Visual Studio 2015 + Cuda 8 => Take project files in VC_CUDA8\
 Visual Sutido 2017 + Cuda 10 => Take project files in VC_CUDA10 (project files might be out of date)\
 Visual Studio 2019 + Cuda10.2 => Take project files in VC_CUDA102\
 
-## Linux
+## Building on Pop!_OS 22.04 LTS + nVIDIA GPU MX150
+```bash
+# This script is intended for Debian based distros
+# To be run as root
 
-Install CUDA SDK.\
-Depending on the CUDA SDK version and on your Linux distribution you may need to install an older g++ (just for the CUDA SDK).\
-Edit the makefile and set up the good CUDA SDK path and appropriate compiler for nvcc. 
+apt install -y nvidia-driver-530 nvidia-dkms-530 nvidia-utils-530 nvidia-cuda-toolkit
 
-```
-CUDA       = /usr/local/cuda-8.0
-CXXCUDA    = /usr/bin/g++-4.8
-```
+# Downloading cuda sdk
+wget https://developer.download.nvidia.com/compute/cuda/11.5.1/local_installers/cuda_11.5.1_495.29.05_linux.run
 
-You can enter a list of architecture (refer to nvcc documentation) if you have several GPU with different architecture. Compute capability 2.0 (Fermi) is deprecated for recent CUDA SDK.
-Kangaroo need to be compiled and linked with a recent gcc (>=7). The current release has been compiled with gcc 7.3.0.\
-Go to the Kangaroo directory. ccap is the desired compute capability.
+# Check and install only the cuda, without the drivers
+sh cuda_11.5.1_495.29.05_linux.run
 
-```
-$ g++ -v
-gcc version 7.3.0 (Ubuntu 7.3.0-27ubuntu1~18.04)
-$ make all (for build without CUDA support)
-or
-$ make gpu=1 ccap=20 all
+# Linking the OpenCL library and libcudart necessary for make tool
+ln -s /usr/local/cuda-11.5/targets/x86_64-linux/lib/libOpenCL.so /usr/lib/libOpenCL.so
+
+# Clonning the repo
+git clone https://github.com/psabadac/Kangaroo.git
+cd Kangaroo
+
+# Replacing path to compiler and cuda library
+sed -i 's/cuda-8.0/cuda-11.5/g' Makefile
+sed -i 's/g++-4.8/g++/g' Makefile
+
+# Run this to determine ccap
+nvidia-smi --query-gpu=compute_cap --format=csv
+
+# Build for MX 150 (for this ccap was 6.1)
+make -B gpu=1 ccap=61 all
+
+#Run
+./kangaroo -h
 ```
 Runnig Kangaroo (Intel(R) Xeon(R) CPU, 8 cores,  @ 2.93GHz, Quadro 600 (x2))
 
